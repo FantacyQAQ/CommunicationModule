@@ -1,0 +1,18 @@
+[global]
+server_name = "localhost"
+address = "0.0.0.0"
+port = 8008
+database_backend = "sqlite"
+database_path = "/data/"
+
+# Disable federation for local dev
+allow_federation = false
+
+# Allow user registration
+allow_registration = true
+
+# Log level
+log = "info"
+
+# Maximum request size (for file uploads, etc.)
+max_request_size = 20_000_000

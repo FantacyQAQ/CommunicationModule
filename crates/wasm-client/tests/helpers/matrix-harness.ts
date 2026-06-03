@@ -10,8 +10,11 @@ export class HarnessHelper {
     async connect(url: string) {
         return this.page.evaluate((u) => (window as any).__harness.connect(u), url);
     }
-    async login(token: string) {
-        return this.page.evaluate((t) => (window as any).__harness.login(t), token);
+    async login(accessToken: string, userId: string, deviceId: string) {
+        return this.page.evaluate(
+            ([t, u, d]) => (window as any).__harness.login(t, u, d),
+            [accessToken, userId, deviceId]
+        );
     }
     async logout() {
         return this.page.evaluate(() => (window as any).__harness.logout());

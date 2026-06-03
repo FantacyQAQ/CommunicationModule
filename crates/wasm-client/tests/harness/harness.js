@@ -30,9 +30,9 @@ window.__harness = {
         return { ok: true };
     },
 
-    async login(token) {
+    async login(accessToken, userId, deviceId) {
         if (!client) throw new Error('Client not connected');
-        await client.login_with_token(token);
+        await client.login(accessToken, userId, deviceId);
         const loggedIn = client.is_logged_in();
         setStatus('logged_in');
         return { ok: true, loggedIn };
