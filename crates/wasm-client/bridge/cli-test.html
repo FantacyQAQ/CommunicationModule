@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Matrix Bridge CLI Test</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        background: #1a1a2e; color: #e0e0e0;
+        font-family: 'Courier New', monospace;
+        height: 100vh; display: flex; flex-direction: column;
+    }
+    #header {
+        background: #16213e; padding: 10px 16px;
+        border-bottom: 1px solid #0f3460;
+        display: flex; align-items: center; gap: 12px;
+    }
+    #header h1 { font-size: 14px; color: #e94560; white-space: nowrap; }
+    #status { font-size: 12px; padding: 3px 8px; border-radius: 3px; }
+    .status-off { background: #333; color: #888; }
+    .status-ok { background: #1b5e20; color: #81c784; }
+    .status-err { background: #b71c1c; color: #ef9a9a; }
+    #output {
+        flex: 1; overflow-y: auto; padding: 12px 16px;
+        font-size: 13px; line-height: 1.6;
+    }
+    #output .ok { color: #66bb6a; }
+    #output .err { color: #ef5350; }
+    #output .info { color: #42a5f5; }
+    #output .evt { color: #ffa726; }
+    #output .cmd { color: #ab47bc; }
+    #output .dim { color: #616161; }
+    #input-area {
+        display: flex; padding: 8px 16px;
+        background: #16213e; border-top: 1px solid #0f3460;
+    }
+    #prompt { color: #e94560; padding: 6px 0; font-weight: bold; }
+    #cmd-input {
+        flex: 1; background: transparent; border: none; color: #e0e0e0;
+        font-family: inherit; font-size: 13px; outline: none;
+        margin-left: 8px;
+    }
+    button {
+        background: #0f3460; color: #e0e0e0; border: 1px solid #1a508b;
+        padding: 6px 12px; font-family: inherit; font-size: 12px;
+        cursor: pointer; border-radius: 3px;
+    }
+    button:hover { background: #1a508b; }
+    button.primary { background: #e94560; border-color: #e94560; }
+    #quick-btns {
+        padding: 6px 16px; background: #16213e;
+        display: flex; gap: 6px; flex-wrap: wrap;
+    }
+</style>
+</head>
+<body>
+<div id="header">
+    <h1>matrix-bridge CLI</h1>
+    <span id="status" class="status-off">OFFLINE</span>
+    <span style="font-size:11px;color:#888;margin-left:auto">type 'help' for commands</span>
+</div>
+<div id="output"></div>
+<div id="quick-btns">
+    <button onclick="exec('init')" class="primary">init</button>
+    <button onclick="exec('login')">login</button>
+    <button onclick="exec('rooms')">rooms</button>
+    <button onclick="exec('msg hello')">send test msg</button>
+    <button onclick="exec('sync start')">sync start</button>
+    <button onclick="exec('events')">show events</button>
+    <button onclick="exec('logout')">logout</button>
+    <button onclick="exec('clear')">clear</button>
+</div>
+<div id="input-area">
+    <span id="prompt">$</span>
+    <input id="cmd-input" autofocus placeholder="type command...">
+</div>
+
+<script type="module">
+import { matrixBridge } from './matrix-bridge.js';
+
+// ---- Config ----
+const WORKER_PATH = '../workspace/matrix-worker.js';  // relative to this page
+const HOMESERVER = 'http://127.0.0.1:8008';
+
+// Test credentials - can be overridden by Playwright via window.__testCreds
+let TEST_TOKEN, TEST_USER_ID, TEST_DEVICE, TEST_ROOM;
+
+if (window.__testCreds) {
+    TEST_TOKEN = window.__testCreds.user1.token;
+    TEST_USER_ID = window.__testCreds.user1.userId;
+    TEST_DEVICE = window.__testCreds.user1.deviceId;
+    TEST_ROOM = window.__testCreds.roomId;
+} else {
+    // Fallback for manual browser usage
+    TEST_TOKEN = 'fypCfuLalo6wvtfFAiFUnMjPJYjCPNuI';
+    TEST_USER_ID = '@testuser1:localhost';
+    TEST_DEVICE = '2eAgJdoux1';
+    TEST_ROOM = '!p0ueSwhzmZRGn---n0g8ee-RhKyyNAmEjT6KeBnXe-Q';
+}
+
+// Dynamic credentials helper
+function getCreds() {
+    if (window.__testCreds) {
+        return {
+            homeserverUrl: window.__testCreds.homeserverUrl,
+            token: window.__testCreds.user1.token,
+            userId: window.__testCreds.user1.userId,
+            deviceId: window.__testCreds.user1.deviceId,
+            roomId: window.__testCreds.roomId,
+        };
+    }
+    // Fallback for manual browser testing
+    return {
+        homeserverUrl: HOMESERVER,
+        token: TEST_TOKEN,
+        userId: TEST_USER_ID,
+        deviceId: TEST_DEVICE,
+        roomId: TEST_ROOM,
+    };
+}
+
+// ---- State ----
+let cmdHistory = [];
+let histIdx = -1;
+
+// ---- Setup ----
+matrixBridge.debug = true;
+matrixBridge.on('*', (type, payload) => {
+    log(`[${type}]`, 'evt', payload);
+});
+
+const cmdInput = document.getElementById('cmd-input');
+cmdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const cmd = cmdInput.value.trim();
+        if (cmd) {
+            cmdHistory.push(cmd);
+            histIdx = cmdHistory.length;
+            exec(cmd);
+        }
+        cmdInput.value = '';
+    } else if (e.key === 'ArrowUp') {
+        if (histIdx > 0) {
+            histIdx--;
+            cmdInput.value = cmdHistory[histIdx];
+        }
+        e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+        if (histIdx < cmdHistory.length - 1) {
+            histIdx++;
+            cmdInput.value = cmdHistory[histIdx];
+        } else {
+            histIdx = cmdHistory.length;
+            cmdInput.value = '';
+        }
+        e.preventDefault();
+    }
+});
+
+// ---- Output ----
+function log(msg, cls = '', payload) {
+    const out = document.getElementById('output');
+    const line = document.createElement('div');
+    line.className = cls;
+    if (payload && cls === 'evt') {
+        line.textContent = `  ${msg} ${JSON.stringify(payload).slice(0, 120)}`;
+    } else {
+        line.textContent = `  ${msg}`;
+    }
+    out.appendChild(line);
+    out.scrollTop = out.scrollHeight;
+}
+
+function logOk(msg) { log(`[OK] ${msg}`, 'ok'); }
+function logErr(msg) { log(`[ERR] ${msg}`, 'err'); }
+function logInfo(msg) { log(`[INFO] ${msg}`, 'info'); }
+function logCmd(msg) { log(`> ${msg}`, 'cmd'); }
+
+function setStatus(s) {
+    const el = document.getElementById('status');
+    el.textContent = s;
+    el.className = s === 'ONLINE' ? 'status-ok' : s === 'ERROR' ? 'status-err' : 'status-off';
+}
+
+// ---- Command Handler ----
+window.exec = async function(cmdLine) {
+    logCmd(cmdLine);
+    const parts = cmdLine.split(/\s+/);
+    const cmd = parts[0];
+    const args = parts.slice(1);
+
+    try {
+        switch (cmd) {
+            case 'help':
+                logInfo('Commands:');
+                logInfo('  init              Connect to homeserver & load WASM');
+                logInfo('  login             Login with test credentials');
+                logInfo('  logout            Logout');
+                logInfo('  rooms             List rooms');
+                logInfo('  join <roomId>     Join a room');
+                logInfo('  leave <roomId>    Leave a room');
+                logInfo('  msg <text>       Send message to test room');
+                logInfo('  history [limit]   Load message history');
+                logInfo('  sync start|stop   Control sync loop');
+                logInfo('  events            Show buffered events');
+                logInfo('  session           Show session status');
+                logInfo('  crypto            Show crypto status');
+                logInfo('  clear             Clear output');
+                logInfo('  debug             Toggle debug mode');
+                break;
+
+            case 'init':
+                logInfo('Initializing...');
+                const c = getCreds();
+                await matrixBridge.init(c.homeserverUrl, WORKER_PATH);
+                logOk('Connected to ' + c.homeserverUrl);
+                setStatus('ONLINE');
+                break;
+
+            case 'login':
+                const lc = getCreds();
+                logInfo('Logging in as ' + lc.userId + '...');
+                const result = await matrixBridge.login(lc.token, lc.userId, lc.deviceId);
+                logOk('Logged in as ' + JSON.stringify(result));
+                break;
+
+            case 'logout':
+                await matrixBridge.logout();
+                logOk('Logged out');
+                setStatus('OFFLINE');
+                break;
+
+            case 'rooms': {
+                const r = await matrixBridge.getRooms();
+                logOk(`${r.rooms.length} rooms`);
+                r.rooms.forEach(room => {
+                    logInfo(`  ${room.roomId.slice(0, 20)}... "${room.name}" topic="${room.topic || ''}"`);
+                });
+                break;
+            }
+
+            case 'join':
+                if (!args[0]) { logErr('Usage: join <roomId>'); break; }
+                await matrixBridge.joinRoom(args[0]);
+                logOk('Joined ' + args[0]);
+                break;
+
+            case 'leave':
+                if (!args[0]) { logErr('Usage: leave <roomId>'); break; }
+                await matrixBridge.leaveRoom(args[0]);
+                logOk('Left ' + args[0]);
+                break;
+
+            case 'msg': {
+                const mc = getCreds();
+                const text = args.join(' ');
+                if (!text) { logErr('Usage: msg <text>'); break; }
+                const m = await matrixBridge.sendMessage(mc.roomId, text);
+                logOk('Sent, eventId=' + m.eventId);
+                break;
+            }
+
+            case 'history': {
+                const hc = getCreds();
+                const limit = parseInt(args[0]) || 20;
+                const h = await matrixBridge.getMessages(hc.roomId, limit);
+                logOk(`${h.messages ? h.messages.length : 0} messages`);
+                if (h.messages) {
+                    h.messages.forEach(msg => {
+                        logInfo(`  [${new Date(msg.timestamp).toLocaleTimeString()}] ${msg.sender}: ${msg.body}`);
+                    });
+                }
+                break;
+            }
+
+            case 'sync':
+                if (args[0] === 'start') {
+                    await matrixBridge.startSync();
+                    logOk('Sync started');
+                } else if (args[0] === 'stop') {
+                    await matrixBridge.stopSync();
+                    logOk('Sync stopped');
+                } else {
+                    logErr('Usage: sync start|stop');
+                }
+                break;
+
+            case 'events':
+                // Events are already logged via the '*' listener
+                logInfo('Events are displayed in real-time above');
+                break;
+
+            case 'session':
+                logInfo('Logged in: ' + matrixBridge.isLoggedIn());
+                break;
+
+            case 'crypto': {
+                const c = await matrixBridge.getCryptoStatus();
+                logOk(JSON.stringify(c));
+                break;
+            }
+
+            case 'clear':
+                document.getElementById('output').innerHTML = '';
+                break;
+
+            case 'debug':
+                matrixBridge.debug = !matrixBridge.debug;
+                logOk('Debug mode: ' + matrixBridge.debug);
+                break;
+
+            case 'test': {
+                const tc = getCreds();
+                logInfo('=== Running test sequence ===');
+                logInfo('1. init...');
+                await matrixBridge.init(tc.homeserverUrl, WORKER_PATH);
+                logOk('init OK');
+                setStatus('ONLINE');
+
+                logInfo('2. login...');
+                await matrixBridge.login(tc.token, tc.userId, tc.deviceId);
+                logOk('login OK');
+
+                logInfo('3. getRooms...');
+                const r2 = await matrixBridge.getRooms();
+                logOk(`getRooms OK (${r2.rooms.length} rooms)`);
+
+                logInfo('4. sendMessage...');
+                const m2 = await matrixBridge.sendMessage(tc.roomId, 'CLI auto-test ' + Date.now());
+                logOk('sendMessage OK, eventId=' + m2.eventId);
+
+                logInfo('=== Test sequence PASSED ===');
+                break;
+            }
+
+            default:
+                logErr('Unknown command: ' + cmd + '. Type help.');
+        }
+    } catch (e) {
+        logErr(e.message);
+        setStatus('ERROR');
+    }
+};
+
+// ---- Init ----
+logInfo('Matrix Bridge CLI Test');
+logInfo(`Worker: ${WORKER_PATH}`);
+logInfo(`Homeserver: ${HOMESERVER}`);
+logInfo('Type "help" for commands, or "test" for automated sequence.');
+</script>
+</body>
+</html>
