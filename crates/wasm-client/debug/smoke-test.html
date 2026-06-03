@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>WASM Smoke Test</title></head>
+<body>
+    <h1>Matrix WASM Client - Smoke Test</h1>
+    <pre id="output"></pre>
+    <script type="module">
+        import init, { greet } from '../pkg/wasm_client.js';
+        
+        const out = document.getElementById('output');
+        function log(msg) { out.textContent += msg + '\n'; }
+        
+        try {
+            log('[INFO] Loading WASM module...');
+            await init();
+            log('[OK]   WASM module loaded successfully');
+            
+            const msg = greet('Matrix');
+            log('[OK]   greet() returned: ' + msg);
+            
+            document.title = '✅ Smoke Test Passed';
+            log('\n✅ All tests passed!');
+        } catch (e) {
+            log('[ERROR] ' + e.message);
+            document.title = '❌ Smoke Test Failed';
+        }
+    </script>
+</body>
+</html>

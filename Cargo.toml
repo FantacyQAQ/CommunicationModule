@@ -1,0 +1,16 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/cloud-backend",
+    "crates/wasm-client",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+# Optimize WASM binary for size
+[profile.release]
+opt-level = "s"
+lto = true

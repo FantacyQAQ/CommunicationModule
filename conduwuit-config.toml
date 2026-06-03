@@ -1,0 +1,25 @@
+# Conduwuit Matrix Homeserver - Development Config
+# 
+# Usage: conduwuit -c config.toml
+
+[global]
+server_name = "localhost"
+
+# Listen on localhost only for development
+address = "127.0.0.1"
+port = 8008
+
+# Disable federation (local dev only)
+allow_federation = false
+
+# Allow user registration via API
+allow_registration = true
+
+# Disable DNS validation for localhost
+no_server_name_validation = true
+
+# Database path (relative to CWD)
+database_path = "./data/conduwuit/"
+
+# Log level
+log = "info"

@@ -1,0 +1,40 @@
+# Conduwuit Matrix Homeserver for local development
+#
+# Usage:
+#   podman compose up -d          # Start in background
+#   podman compose down           # Stop and remove
+#   podman compose logs -f        # Follow logs
+#
+# Client-Server API: http://localhost:8008
+# Admin:             http://localhost:8008/_matrix/client/v3/admin
+
+services:
+  conduwuit:
+    image: docker.io/girlbossceo/conduwuit:latest
+    container_name: matrix-conduwuit
+    restart: unless-stopped
+    ports:
+      - "8008:8008"   # Client-Server API (no federation)
+    volumes:
+      - ./data/conduwuit:/data:z
+    environment:
+      # Server configuration
+      CONDUWUIT_SERVER_NAME: "localhost"
+      CONDUWUIT_DATABASE_PATH: "/data"
+      
+      # Allow user registration (needed for creating test users)
+      CONDUWUIT_ALLOW_REGISTRATION: "true"
+      
+      # Disable federation (local dev only, no external servers)
+      CONDUWUIT_ALLOW_FEDERATION: "false"
+      
+      # Disable check for valid DNS (we're on localhost)
+      CONDUWUIT_NO_SERVER_NAME_VALIDATION: "true"
+      
+      # Log level
+      CONDUWUIT_LOG: "info"
+      
+      # Admin user - automatically created on first start
+      # Password: admin123
+      CONDUWUIT_ADMIN_USERNAME: "admin"
+      CONDUWUIT_ADMIN_PASSWORD: "admin123"

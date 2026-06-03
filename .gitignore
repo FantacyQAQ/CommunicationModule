@@ -1,0 +1,8 @@
+/target
+/doc/
+/.doc/
+/data/
+**/pkg/
+**/node_modules/
+**/test-results/
+**/.env.test
