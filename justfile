@@ -4,8 +4,6 @@
 # ---- Config ----
 set dotenv-load := true
 
-export RUSTFLAGS := "--cfg getrandom_backend=\"wasm_js\""
-
 # ---- Default ----
 default:
     @just --list
@@ -21,12 +19,12 @@ check:
 
 # Check WASM client compiles for wasm32 target
 check-wasm:
-    cargo check -p wasm-client --target wasm32-unknown-unknown
+    RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo check -p wasm-client --target wasm32-unknown-unknown
 
 # Build WASM client (debug)
 build-wasm:
     @echo "Building WASM client (debug)..."
-    cd crates/wasm-client && wasm-pack build --target web --out-dir pkg --out-name wasm_client .
+    cd crates/wasm-client && RUSTFLAGS='--cfg getrandom_backend="wasm_js"' wasm-pack build --target web --out-dir pkg --out-name wasm_client .
     @echo ""
     @echo "Build complete! Output in crates/wasm-client/pkg/"
     @echo "  pkg/wasm_client.js        - JS glue code"
@@ -36,7 +34,7 @@ build-wasm:
 # Build WASM client (release, optimized, smaller)
 build-wasm-release:
     @echo "Building WASM client (release)..."
-    cd crates/wasm-client && wasm-pack build --target web --release --out-dir pkg --out-name wasm_client .
+    cd crates/wasm-client && RUSTFLAGS='--cfg getrandom_backend="wasm_js"' wasm-pack build --target web --release --out-dir pkg --out-name wasm_client .
     @echo ""
     @echo "Build complete! Output in crates/wasm-client/pkg/"
 
@@ -112,6 +110,10 @@ clean:
 
 # Full CI pipeline
 ci: build test
+
+# Test the bot daemon
+bot-test:
+    ./crates/cloud-backend/test-bot.sh
 
 # Start dev server for manual browser testing
 dev-server:

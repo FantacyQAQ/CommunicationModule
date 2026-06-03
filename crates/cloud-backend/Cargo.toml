@@ -24,9 +24,15 @@ rusqlite = { version = "0.37", features = ["bundled"] }
 # Config
 toml = "1"
 
+# CLI argument parsing
+clap = { version = "4", features = ["derive"] }
+
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP client (Conduit Admin API)
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 
 # Utilities
 uuid = { version = "1", features = ["v4"] }

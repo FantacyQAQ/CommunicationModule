@@ -1,0 +1,7 @@
+[matrix]
+homeserver_url = "http://127.0.0.1:8008"
+bot_username = "chatbot"
+bot_password = "botpass123"
+
+[database]
+path = "./data/bot.db"
