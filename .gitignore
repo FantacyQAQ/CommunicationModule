@@ -7,3 +7,4 @@
 **/test-results/
 **/.env.test
 crates/wasm-client/tests/.test-creds.json
+.writeable.txt
