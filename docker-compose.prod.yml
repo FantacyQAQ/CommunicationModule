@@ -17,11 +17,6 @@ services:
       - ./conduit-config.toml:/etc/conduit.toml:ro
     environment:
       CONDUIT_CONFIG: "/etc/conduit.toml"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8008/_matrix/client/versions"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
 
   bot:
     build:
@@ -35,8 +30,7 @@ services:
     environment:
       HOMESERVER_URL: "http://homeserver:8008"
     depends_on:
-      homeserver:
-        condition: service_healthy
+      - homeserver
 
 volumes:
   homeserver-data:

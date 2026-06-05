@@ -5,12 +5,20 @@ HOMESERVER="${HOMESERVER_URL:-http://homeserver:8008}"
 BOT_USERNAME="${BOT_USERNAME:-chatbot}"
 DB_PATH="${DB_PATH:-/data/bot.db}"
 GRPC_PORT="${GRPC_PORT:-50051}"
+PASSWORD_FILE="/data/.bot_password"
 
-# Generate random password if not provided
+# Read persisted password, or generate and persist a new one
 if [ -z "${BOT_PASSWORD:-}" ]; then
-    BOT_PASSWORD=$(head -c 24 /dev/urandom | base64 | tr -d '/+=' | head -c 24)
-    echo "[entrypoint] Generated random bot password"
+    if [ -f "$PASSWORD_FILE" ]; then
+        BOT_PASSWORD=$(cat "$PASSWORD_FILE")
+        echo "[entrypoint] Loaded bot password from $PASSWORD_FILE"
+    else
+        BOT_PASSWORD=$(head -c 24 /dev/urandom | base64 | tr -d '/+=' | head -c 24)
+        echo "$BOT_PASSWORD" > "$PASSWORD_FILE"
+        echo "[entrypoint] Generated and saved bot password to $PASSWORD_FILE"
+    fi
 fi
+export BOT_PASSWORD
 
 # Wait for homeserver to be ready
 echo "[entrypoint] Waiting for homeserver at $HOMESERVER..."
@@ -30,9 +38,6 @@ curl -sf -X POST "$HOMESERVER/_matrix/client/v3/register" \
     -d "{\"username\":\"$BOT_USERNAME\",\"password\":\"$BOT_PASSWORD\",\"auth\":{\"type\":\"m.login.dummy\"}}" \
     > /dev/null 2>&1 && echo "[entrypoint] Bot user registered" \
     || echo "[entrypoint] Bot user may already exist, continuing..."
-
-# Export password so the bot binary can use it via env var
-export BOT_PASSWORD
 
 echo "[entrypoint] Starting bot daemon on 0.0.0.0:$GRPC_PORT..."
 exec cloud-backend \
