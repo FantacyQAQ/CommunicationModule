@@ -26,27 +26,6 @@ podman compose up -d
 
 容器内 `entrypoint.sh` 自动完成：生成随机密码 → 等待 Conduit → 注册 Bot → 启动服务。无需任何手动配置。
 
-### 开发构建
-
-如需从源码构建（需要 Rust 环境）：
-
-```bash
-cargo build --release -p cloud-backend
-# → target/release/cloud-backend (~33MB, 静态链接)
-BOT_PASSWORD=<password> ./cloud-backend --mode grpc
-```
-
-```bash
-# 环境变量传入密码
-BOT_PASSWORD=<password> cloud-backend --mode grpc
-
-# 指定端口
-BOT_PASSWORD=<password> cloud-backend --mode grpc --port 127.0.0.1:9090
-
-# 自定义 Matrix 服务器
-BOT_PASSWORD=<password> cloud-backend --mode grpc --homeserver-url http://matrix.internal:8008
-```
-
 | 参数 | 默认值 | 说明 |
 |------|------|------|
 | `--mode grpc` | `cli` | 启动模式，必须设为 `grpc` |

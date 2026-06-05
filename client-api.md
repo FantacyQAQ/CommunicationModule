@@ -37,8 +37,6 @@ Vue 3 页面                          浏览器进程
 |------|---------|------|
 | `matrix-bridge.js` | `src/utils/matrix-bridge.js` | 前端 SDK |
 
-`frontend.zip` 中还包含 `client-api.md`（本文档）。
-
 ---
 
 ## 快速开始
