@@ -1,0 +1,43 @@
+# Matrix 通信后端 — 生产部署
+#
+# 启动: podman compose up -d
+#
+# 对外端口:
+#   8008  — Matrix Client-Server API（前端 WASM 客户端连接）
+#   50051 — Bot gRPC（Java 后端调用）
+
+services:
+  homeserver:
+    image: docker.io/matrixconduit/matrix-conduit:latest
+    restart: unless-stopped
+    ports:
+      - "8008:8008"
+    volumes:
+      - homeserver-data:/data
+      - ./conduit-config.toml:/etc/conduit.toml:ro
+    environment:
+      CONDUIT_CONFIG: "/etc/conduit.toml"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/_matrix/client/versions"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    ports:
+      - "50051:50051"
+    volumes:
+      - bot-data:/data
+    environment:
+      HOMESERVER_URL: "http://homeserver:8008"
+    depends_on:
+      homeserver:
+        condition: service_healthy
+
+volumes:
+  homeserver-data:
+  bot-data:

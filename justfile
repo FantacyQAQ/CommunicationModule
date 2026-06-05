@@ -102,6 +102,10 @@ clean:
 # Full CI pipeline
 ci: build test
 
+# Build distribution packages (frontend.zip + backend.zip)
+package:
+    ./scripts/package.sh
+
 # Start the bot in gRPC mode (for manual testing or Java backend)
 bot-grpc port='127.0.0.1:50051':
     BOT_PASSWORD=botpass123 cargo run -p cloud-backend -- --mode grpc --port {{port}}

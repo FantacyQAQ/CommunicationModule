@@ -21,19 +21,23 @@ Vue 3 页面                          浏览器进程
 
 ## 安装
 
+从 `frontend.zip` 中提取文件，按以下规则放置：
+
 **运行时资源 — 复制到 `public/matrix/`（不可打包，运行时动态加载）：**
 
-| 源路径 | 目标路径 | 说明 |
-|--------|---------|------|
-| `crates/wasm-client/workspace/matrix-worker.js` | `public/matrix/matrix-worker.js` | SharedWorker |
-| `crates/wasm-client/pkg/wasm_client.js` | `public/matrix/wasm_client.js` | WASM JS 胶水 |
-| `crates/wasm-client/pkg/wasm_client_bg.wasm` | `public/matrix/wasm_client_bg.wasm` | WASM 二进制 |
+| 文件 | 目标路径 | 说明 |
+|------|---------|------|
+| `matrix-worker.js` | `public/matrix/matrix-worker.js` | SharedWorker |
+| `wasm_client.js` | `public/matrix/wasm_client.js` | WASM JS 胶水 |
+| `wasm_client_bg.wasm` | `public/matrix/wasm_client_bg.wasm` | WASM 二进制（~13MB，gzip ~3.9MB） |
 
 **SDK 模块 — 复制到 `src/utils/`（可打包）：**
 
-| 源路径 | 目标路径 | 说明 |
-|--------|---------|------|
-| `crates/wasm-client/bridge/matrix-bridge.js` | `src/utils/matrix-bridge.js` | 前端 SDK |
+| 文件 | 目标路径 | 说明 |
+|------|---------|------|
+| `matrix-bridge.js` | `src/utils/matrix-bridge.js` | 前端 SDK |
+
+`frontend.zip` 中还包含 `client-api.md`（本文档）。
 
 ---
 
@@ -43,7 +47,7 @@ Vue 3 页面                          浏览器进程
 import { matrixBridge } from '@/utils/matrix-bridge.js';
 
 // 1. 初始化
-// 到时候换成我们的服务器暴露的matrix home server端口
+// Homeserver URL 填实际ip地址或域名, 端口看具体反代情况, 后端Matrix home server默认暴露8008端口
 await matrixBridge.init('http://localhost:8008');
 
 // 2. 登录（凭证来自后端 API）
