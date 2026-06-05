@@ -45,29 +45,20 @@ build: check build-wasm
 # Test
 # ============================================================
 
-# Run all Playwright tests
-test:
+# Run all tests (frontend + bot)
+test: test-frontend test-bot
+
+# Run frontend WASM tests (Playwright)
+test-frontend:
     cd crates/wasm-client/tests && npx playwright test
+
+# Run bot tests (gRPC mode)
+test-bot:
+    ./crates/cloud-backend/test-grpc.sh
 
 # Run tests with debugger
 test-debug:
     cd crates/wasm-client/tests && npx playwright test --debug
-
-# Run only Phase 0 tests (WASM load smoke test)
-test-p0:
-    cd crates/wasm-client/tests && npx playwright test specs/01-load.spec.ts
-
-# Run only Phase 1 tests (Matrix SDK integration)
-test-p1:
-    cd crates/wasm-client/tests && npx playwright test specs/02-phase1-real.spec.ts
-
-# Run only Phase 2 tests (SharedWorker message router)
-test-p2:
-    cd crates/wasm-client/tests && npx playwright test specs/03-phase2-worker.spec.ts
-
-# Run only Phase 3 tests (Bridge CLI)
-test-p3:
-    cd crates/wasm-client/tests && npx playwright test specs/04-phase3-bridge.spec.ts
 
 # Show Playwright test report
 test-report:
@@ -111,11 +102,7 @@ clean:
 # Full CI pipeline
 ci: build test
 
-# Test the bot daemon (CLI mode)
-bot-test:
-    ./crates/cloud-backend/test-bot.sh
-
-# Start the bot in gRPC mode (daemon)
+# Start the bot in gRPC mode (for manual testing or Java backend)
 bot-grpc port='127.0.0.1:50051':
     BOT_PASSWORD=botpass123 cargo run -p cloud-backend -- --mode grpc --port {{port}}
 
