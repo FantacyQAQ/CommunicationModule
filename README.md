@@ -4,9 +4,11 @@
 
 ### 前端
 
-api文档: [client-api.md](./client-api.md)
-release: 我稍后布置
+api文档: [client-api.md](./client-api.md)  
+
+release: [frontend.zip](https://github.com/user-attachments/files/28644382/frontend.zip)
 
 ### 后端
-api文档: [bot-api.md](./bot-api.md)
-release: 我稍后布置
+api文档: [bot-api.md](./bot-api.md)  
+
+release: [backend.zip](https://github.com/user-attachments/files/28644386/backend.zip)
