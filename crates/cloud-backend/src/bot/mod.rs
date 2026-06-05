@@ -1,4 +1,3 @@
-use crate::config::Config;
 use crate::db::Database;
 use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::ruma::OwnedUserId;
@@ -14,18 +13,23 @@ pub struct Bot {
 }
 
 impl Bot {
-    pub async fn init(config: &Config) -> Result<Self, anyhow::Error> {
-        let db = Database::open(&config.database.path)?;
+    /// Initialize the bot with explicit parameters (no config file needed).
+    pub async fn init(
+        homeserver_url: &str,
+        bot_username: &str,
+        bot_password: &str,
+        db_path: &str,
+    ) -> Result<Self, anyhow::Error> {
+        let db = Database::open(db_path)?;
 
         let client = Client::builder()
-            .homeserver_url(&config.matrix.homeserver_url)
+            .homeserver_url(homeserver_url)
             .build()
             .await?;
 
-        // Login as bot user
         let login_response = client
             .matrix_auth()
-            .login_username(&config.matrix.bot_username, &config.matrix.bot_password)
+            .login_username(bot_username, bot_password)
             .initial_device_display_name("cloud-backend-bot")
             .send()
             .await?;
@@ -36,17 +40,16 @@ impl Bot {
             login_response.device_id
         );
 
-        // Do initial sync
         client.sync_once(matrix_sdk::config::SyncSettings::default()).await?;
 
         Ok(Self {
             matrix_client: client,
-            homeserver_url: config.matrix.homeserver_url.clone(),
+            homeserver_url: homeserver_url.to_string(),
             db,
         })
     }
 
-    /// Login with an existing access token (for session recovery)
+    /// Login with an existing access token (for session recovery).
     pub async fn init_with_token(
         homeserver_url: &str,
         access_token: &str,

@@ -111,9 +111,13 @@ clean:
 # Full CI pipeline
 ci: build test
 
-# Test the bot daemon
+# Test the bot daemon (CLI mode)
 bot-test:
     ./crates/cloud-backend/test-bot.sh
+
+# Start the bot in gRPC mode (daemon)
+bot-grpc port='127.0.0.1:50051':
+    BOT_PASSWORD=botpass123 cargo run -p cloud-backend -- --mode grpc --port {{port}}
 
 # Start dev server for manual browser testing
 dev-server:

@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package bot;
+
+service BotService {
+    rpc Ping(PingRequest) returns (PingResponse);
+
+    rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
+    rpc GetUserCredentials(GetUserCredentialsRequest) returns (GetUserCredentialsResponse);
+
+    rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse);
+    rpc GetRoom(GetRoomRequest) returns (GetRoomResponse);
+    rpc CloseRoom(CloseRoomRequest) returns (CloseRoomResponse);
+
+    rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+    rpc ListRooms(ListRoomsRequest) returns (ListRoomsResponse);
+}
+
+message PingRequest {}
+message PingResponse {
+    bool pong = 1;
+    int64 time = 2;
+}
+
+message RegisterUserRequest {
+    string platform_user_id = 1;
+}
+message RegisterUserResponse {
+    string matrix_user_id = 1;
+    string access_token = 2;
+    string device_id = 3;
+}
+
+message GetUserCredentialsRequest {
+    string platform_user_id = 1;
+}
+message GetUserCredentialsResponse {
+    string matrix_user_id = 1;
+}
+
+message CreateRoomRequest {
+    string buyer_pid = 1;
+    string seller_pid = 2;
+    string title = 3;
+    optional string topic = 4;
+}
+message CreateRoomResponse {
+    string matrix_room_id = 1;
+}
+
+message GetRoomRequest {
+    string buyer_pid = 1;
+    string seller_pid = 2;
+}
+message GetRoomResponse {
+    optional string matrix_room_id = 1;
+}
+
+message CloseRoomRequest {
+    string matrix_room_id = 1;
+}
+message CloseRoomResponse {}
+
+message ListUsersRequest {}
+message UserEntry {
+    string platform_user_id = 1;
+    string matrix_user_id = 2;
+    int64 created_at = 3;
+}
+message ListUsersResponse {
+    repeated UserEntry users = 1;
+}
+
+message ListRoomsRequest {}
+message RoomEntry {
+    string matrix_room_id = 1;
+    string buyer_pid = 2;
+    string seller_pid = 3;
+    string title = 4;
+    optional string topic = 5;
+    string status = 6;
+}
+message ListRoomsResponse {
+    repeated RoomEntry rooms = 1;
+}
